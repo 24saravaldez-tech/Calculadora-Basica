@@ -1,178 +1,268 @@
-
-let botonNumero = document.querySelectorAll('.boton-numero')
+//let botonNumero = document.querySelectorAll('.boton-numero')
 let input = document.querySelector('.salida')
-let operaciones = document.querySelectorAll('.operador')
-let noPermitidosInicio = '*/+%'
-let operadoresNormales = '/*-+%'
+//let operaciones = document.querySelectorAll('.operador')
+//let noPermitidosInicio = '*/+%'
+//let operadoresNormales = '/*-+%'
 let eliminarTodo = document.querySelector('.eliminar')
 let eliminarCaracter = document.querySelector('#borrar')
-let resultado = document.querySelector('.resultado')
-let numeros = '0123456789'
 
 
-function guardarUltimoCaracter(caracter){
-   let ultimo = caracter.slice(-1);
-   return ultimo
+let botones = document.querySelectorAll('.numero')
+let operadores = document.querySelectorAll('.operador')
+//let input = document.querySelector('#pantalla')
+
+botones.forEach(btn => {
+    btn.addEventListener('click', (event) => {
+        input.value += event.target.textContent
+    })
+})
+
+const buscarMultiplicacion = (datos) => {
+    let arreglo = []
+    while (datos.includes('*') || datos.includes('/')) {
+        for (let i = 0; i < datos.length; i++) {
+            if (datos[i] == '*' || datos[i] == '/') {
+                arreglo[0] = datos[i - 1]
+                arreglo[1] = datos[i]
+                arreglo[2] = datos[i + 1]
+
+                let decimales = controlDecimales(arreglo)
+
+                if (decimales){
+                    input.value = 'Doble Punto'
+                    return;
+                }
+
+                let calculo = calcular(arreglo)
+                datos.splice(i - 1, 3, calculo)
+            }
+
+        }
+    }
+
+    return datos;
 }
 
-botonNumero.forEach(btn => {
-    btn.addEventListener('click', (event) =>{
-        input.value += event.target.textContent
-        guardarUltimoCaracter(input.value)
-    })
-})
+const operacion = () => {
+    let resultado  = 0
+    let operacionLarga = input.value
+    let operadoresTamanio = 0
+    let operadores = '+-/*'
+    let datos = []
 
-botonNumero.forEach(btn => {
-    btn.addEventListener('keydown', (event) =>{
-        input.value += event.key
-        guardarUltimoCaracter(input.value)
-    })
-})
+    datos = operacionLarga.trim().split(' ')
 
+    for(let b =0; b < datos.length; b++)
+    {
+        if(datos[b] == ""){
+            let signos = datos[b-1] + datos[b+1]
+            switch(signos){
+                case '+-':
+                    datos.splice(b-1, 3, '-')
+                    break;
+                case '++':
+                    datos.splice(b-1, 3, '+')
+                    break;
+                case '--':
+                    datos.splice(b-1, 3, '+')
+                    break;
+                case '-+':
+                    datos.splice(b-1, 3, '-')
+                    break;
+                case '*-':
+                    datos.splice(b, 3, parseFloat(datos[b+2])*-1)
 
-operaciones.forEach(btn => {
-    btn.addEventListener('click', (event) => {
-        if(input.value.length < 1 && noPermitidosInicio.includes(event.target.textContent)){
-            alert('No se permiten estas operaciones al inicio.')
-            input.value = ''
+                    break;
+                case '*+':
+                    datos.splice(b-1, 3, '*')
+                    break;
+                case '/+':
+                    datos.splice(b-1, 3, '/')
+                    break;
+                case '/-':
+                    datos.splice(b, 3, parseFloat(datos[b+2]) * -1)
+                    break;
+                default:
+                    return 'Math Error'
+            }
+
+        }else if(operadores.includes(datos[b])  && b == 0){
+            if(datos[b] == '-'){
+                datos[b+1] = parseFloat(datos[b+1]) * -1
+            }else{
+                datos[b+1] = parseFloat(datos[b+1]) * 1
+            }
+            datos.shift()
         }
-        
-        if (operadoresNormales.includes(guardarUltimoCaracter(input.value))){
-          input.value = input.value.slice(0, -1)
-          input.value += event.target.textContent
-          guardarUltimoCaracter(input.value)
+    }
 
+    console.log(datos)
+
+   for (let i = 0; i <= datos.length; i++) {
+        if (operadores.includes(datos[i])) {
+            console.log(datos[i])
+            operadoresTamanio++
+        }
+    }
+
+    datos = buscarMultiplicacion(datos)
+
+
+    for (let j = 0; j < operadoresTamanio; j++) {
+       if(datos.length >= 3){
+        let decimales = controlDecimales(datos)
+        if(decimales) {
+            input.value = 'Doble punto'
+            return;
+        }
+            resultado = calcular(datos)
+       }else{
+            resultado = datos[0]
+       }
+    }
+
+    input.value = resultado
+}
+
+const calcular = (datos) => {
+    let calculo;
+
+    switch (datos[1]) {
+        case '+':
+            calculo = parseFloat(datos[0]) + parseFloat(datos[2])
+
+            datos.shift()
+            datos.shift()
+            datos.shift()
+            datos.unshift(calculo)
+            return calculo;
+            break;
+        case '-':
+            calculo = parseFloat(datos[0]) - parseFloat(datos[2])
+            datos.shift()
+            datos.shift()
+            datos.shift()
+            datos.unshift(calculo)
+            return calculo;
+            break;
+        case '*':
+            calculo = parseFloat(datos[0]) * parseFloat(datos[2])
+            datos.shift()
+            datos.shift()
+            datos.shift()
+            datos.unshift(calculo)
+            return calculo;
+            break;
+        case '/':
+            calculo = parseFloat(datos[0]) / parseFloat(datos[2])
+            datos.shift()
+            datos.shift()
+            datos.shift()
+            datos.unshift(calculo)
+            return calculo;
+            break;
+        default:
+            return 'expresion mal formada'
+    }
+}
+
+
+operadores.forEach(operador => {
+    operador.addEventListener('click', (event) => {
+        if (event.target.textContent == '=') {
+            operacion()
         } else {
+            input.value += ' ' + event.target.textContent + ' '
+        }
+    })
+})
 
-        input.value += event.target.textContent
-        guardarUltimoCaracter(input.value)
+
+const controlDecimales = (arreglo) => {
+    let count = 0
+    //[2.5.5, +, 3]
+    for (let i = 0; i < arreglo.length; i++) {
+        for (let j = 0; j < arreglo[i].length; j++) {
+            if (arreglo[i][j] == '.') {
+                count++
+            }
         }
 
-        })
-    } )
+        if (count > 1) {
+            return true
+        }
+
+
+// definir nuestra calculadora
+// Hacer operaciones Largas.
+// Aceptar Negativos
+// 5
+// solo signos mas y menos juntos.
 
 
 
-eliminarTodo.addEventListener('click', (event) => {
-    input.value = ''
-    return
-})
 
 
 
-eliminarCaracter.addEventListener('click', (event) => {
-    input.value = input.value.slice(0, -1)
-    return
-})
+// // eliminarTodo.addEventListener('click', (event) => {
+// //     input.value = ''
+// //     return
+// // })
 
 
 
-resultado.addEventListener('click', (event) => {
-    input.value = eval(input.value)  //no es la fomra recomendada por varias razones: mal rendimiento, dificultad de depuración e inseguirdad
- return
-})
+// // eliminarCaracter.addEventListener('click', (event) => {
+// //     input.value = input.value.slice(0, -1)
+// //     return
+// // })
 
 
 
-document.addEventListener('keydown', (event) => {
-
-    if(event.key == 'Backspace'){
-        input.value = input.value.slice(0, -1)
-        return
-
-    }if(event.key == 'Delete'){
-        input.value = ''
-        return
-
-    } if(event.key == 'Enter'){
-        input.value = eval(input.value)
-        return
-    }
+// // resultado.addEventListener('click', (event) => {
+// //     input.value = eval(input.value)  //no es la fomra recomendada por varias razones: mal rendimiento, dificultad de depuración e inseguirdad
+// //  //return
+// // })
 
 
-    if (input.value.length < 1 && noPermitidosInicio.includes(event.key)) {
-        alert('No se permiten estas operaciones al inicio.')
-        input.value = ''
-        return
 
-    } 
+// // document.addEventListener('keydown', (event) => {
+
+// //     if(event.key == 'Backspace'){
+// //         input.value = input.value.slice(0, -1)
+// //         return
+
+// //     }if(event.key == 'Delete'){
+// //         input.value = ''
+// //         return
+
+// //     } if(event.key == 'Enter'){
+// //         input.value = eval(input.value)
+// //     }
+
+
+// //     if (input.value.length < 1 && noPermitidosInicio.includes(event.key)) {
+// //         alert('No se permiten estas operaciones al inicio.')
+// //         input.value = ''
+// //         return
+// //     } 
     
-    if (operadoresNormales.includes(guardarUltimoCaracter(input.value)) && operadoresNormales.includes(event.key)) {
-        
-        input.value = input.value.slice(0, -1)
-        input.value += event.key
-        return
-    }
+// //     if (operadoresNormales.includes(guardarUltimoCaracter(input.value)) && operadoresNormales.includes(event.key)) {
+// //         input.value = input.value.slice(0, -1)
+// //         input.value += event.key
+// //         return
+// //     }
 
 
-    if (operadoresNormales.includes(event.key)) {
-        input.value += event.key
-        return
-    }
-
-
-
-    if(numeros.includes(event.key)){
-        input.value += event.key
-        return
-    }
-
-})
+// //     if (operadoresNormales.includes(event.key)) {
+// //         input.value += event.key
+// //         return
+// //     }
 
 
 
-                      // input.value = input.value.replace(input.value[input.value.length - 1], event.target.textContent)
-        //} else if (input.value[input.value.length -1].includes(operadoresNormales)) {
-          //  alert('No se pueden repetir caracteres')
-          //  input.value += event.target.textContent
-          
-// eliminarCaracter.addEventListener('keydown', (event) => {
-//     if(event.key == "Delete"){
-//         input.value = ''                                         //NO FUNCIONO PORQUE SE LE ESTABA DANDO EL EVENT.KEY A UNA TECLA, CUANDO DEBIA OCURRIR EN TODO EL DOCUMENTO
-//     } 
-// })
-// eliminarCaracter.addEventListener('keydown', (event) => {        //NO FUNCIONO PORQUE SE LE ESTABA DANDO EL EVENT.KEY A UNA TECLA, CUANDO DEBIA OCURRIR EN TODO EL DOCUMENTO
-//     if(event.key == "Backspace"){
-//         input.value = input.value.slice(0, -1)
-//     } 
-// })
+// //     if(numeros.includes(event.key)){
+// //         input.value += event.key
+// //         return
+// //     }
 
-
-    // if(event.key == '1'){
-    //     input.value += 1
-    // } 
-    
-    // if(event.key == '2'){
-    //     input.value += 2
-    // } 
-    
-    // if(event.key == '3'){
-    //     input.value += 3
-    // } 
-    
-    // if(event.key == '4'){
-    //     input.value += 4
-    // } 
-    
-    // if(event.key == '5'){
-    //     input.value += 5
-    // } 
-    
-    // if(event.key == '6'){
-    //     input.value += 6
-    // } 
-    
-    // if(event.key == '7'){
-    //     input.value += 7
-
-    // } if(event.key == '8'){
-    //     input.value += 8
-
-    // } if(event.key == '9'){
-    //     input.value += 9
-
-    // } if(event.key == '0'){
-    //     input.value += 0
-    // }
-    
-       
+// // })
